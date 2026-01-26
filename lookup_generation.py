@@ -34,7 +34,7 @@ def load_hand_matrix():
 
         np.save("data/hand_matrix.npy", hand_matrix)
 
-        return hand_matrix
+    return hand_matrix
 
 # Load or initialize equity matrix
 def load_equity_matrix():   
@@ -51,7 +51,7 @@ def load_equity_matrix():
 
         for i in range(13):
             for j in range(13):
-                equity_matrix[i][j] = np.empty((169, 22), dtype=float)
+                equity_matrix[i][j] = np.empty((169, 33), dtype=float)
         np.save("data/equity_matrix.npy", equity_matrix)
 
     return equity_matrix
@@ -128,7 +128,7 @@ def tirage_simulator(hero_cards, villain_cards):
     
     return result, hero_score, villain_score, delta_score
 
-def monte_carlo_experience(hero_cards, villain_cards, num_simulations=1000): # study the variation of num_simulations and closeness of true
+def monte_carlo_experience(hero_cards, villain_cards, num_simulations=5000): # study the variation of num_simulations and closeness of true
 
     stats_matrix = np.empty((num_simulations, 4))
     #colonnes : equity, hero_score, villain_score, delta_score
@@ -214,16 +214,16 @@ def monte_carlo_experience(hero_cards, villain_cards, num_simulations=1000): # s
         Q3_delta_score
     ])
 
-def equity_generation_for_canonical_hand_every_showdown(hero_card, hand_matrix, equity_matrix_slice_for_one_hand):
+def equity_generation_for_canonical_hand_every_showdown(hero_card, hand_matrix, equity_matrix_slice_for_one_hand, full_equity_matrix):
     
     # VÉRIFICATION 1 : C'est bien une matrice numpy
     if not isinstance(equity_matrix_slice_for_one_hand, np.ndarray):
         raise TypeError(f"equity_matrix_slice_for_one_hand doit être np.ndarray, pas {type(equity_matrix_slice_for_one_hand)}")
     
     # VÉRIFICATION 2 : Shape correct
-    if equity_matrix_slice_for_one_hand.shape != (169, 22):
-        raise ValueError(f"equity_matrix_slice_for_one_hand doit être (169, 22), pas {equity_matrix_slice_for_one_hand.shape}")
-    
+    if equity_matrix_slice_for_one_hand.shape != (169, 33):
+        raise ValueError(f"equity_matrix_slice_for_one_hand doit être (169, 33), pas {equity_matrix_slice_for_one_hand.shape}")
+
     if not isinstance(hand_matrix, np.ndarray):
         raise TypeError(f"hand_matrix doit être np.ndarray, pas {type(hand_matrix)}")   
     if hand_matrix.shape != (13, 13):
@@ -231,11 +231,30 @@ def equity_generation_for_canonical_hand_every_showdown(hero_card, hand_matrix, 
 
     for i in range(13):
         for j in range(13):
+            if equity_matrix_slice_for_one_hand[i*13+j][0] != 0:
+                print(f"Equity already computed for {hero_card} vs {hand_matrix[i][j]}, skipping...")
+                continue  # skip already computed hands
             villain_card = hand_matrix[i][j]
-            equity_matrix_slice_for_one_hand[i*13+j] = monte_carlo_experience(hero_card, villain_card, num_simulations=10)    
+            equity_matrix_slice_for_one_hand[i*13+j] = monte_carlo_experience(hero_card, villain_card)  
+
+            np.save("data/equity_matrix.npy", full_equity_matrix)   
 
     
-    
+def equity_generation_for_every_hand (hand_matrix, equity_matrix):
+    for i in range(13):
+        for j in range(13):
+            
+            equity_colomn = equity_matrix[i][j][:,0]
+
+            has_zero = np.any(equity_colomn == 0)
+            if not has_zero:
+                print(f"Equity already computed for {hand_matrix[i][j]}, skipping...")
+                continue  # skip already computed hands
+
+            hero_card = hand_matrix[i][j]
+            print(f"Starting equity generation for {hero_card}...")
+            equity_generation_for_canonical_hand_every_showdown(hero_card, hand_matrix, equity_matrix[i][j], equity_matrix)
+            print(f"Completed equity generation for {hero_card}.")
 
 
 if __name__ == "__main__":
@@ -243,9 +262,12 @@ if __name__ == "__main__":
     equity_matrix = load_equity_matrix()
     hand_matrix = load_hand_matrix()
 
-    equity_generation_for_canonical_hand_every_showdown("AA", hand_matrix, equity_matrix[0][0])
+    try : 
+        equity_generation_for_every_hand(hand_matrix, equity_matrix)
 
-    
+    except KeyboardInterrupt :
+        print("Process interrupted by user. ")
+        
 
     
     
