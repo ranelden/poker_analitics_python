@@ -130,6 +130,8 @@ def tirage_simulator(hero_cards, villain_cards):
     return result, hero_score, villain_score, delta_score
 
 def monte_carlo_experience(hero_cards, villain_cards, num_simulations=10000): # study the variation of num_simulations and closeness of true
+    
+    print(f"Starting Monte Carlo simulation for {hero_cards} vs {villain_cards} ")
 
     stats_matrix = np.empty((num_simulations, 4))
     #colonnes : equity, hero_score, villain_score, delta_score
@@ -141,8 +143,6 @@ def monte_carlo_experience(hero_cards, villain_cards, num_simulations=10000): # 
         i[0], i[1], i[2], i[3] = tirage_simulator(hero_cards, villain_cards)
         count += 1
         sum_equity += i[0]
-        print(f"Simulation for {hero_cards} vs {villain_cards} : {count/num_simulations*100:.2f}%  completed : {sum_equity/count:.5f}", flush=True, end="\r")
-    print(end="\n")
     #recuperation de la moyenne empyrique, et ou l equité
     equity = np.mean(stats_matrix[:,0])
 
@@ -179,6 +179,8 @@ def monte_carlo_experience(hero_cards, villain_cards, num_simulations=10000): # 
     Q1_score_defeat, mediane_score_defeat, Q3_score_defeat = np.percentile(stats_matrix[stats_matrix[:,0]==0][:,1], [25, 50, 75])
     Q1_delta_score, mediane_delta_score, Q3_delta_score = np.percentile(stats_matrix[:,3], [25, 50, 75])
     
+    print(f"Completed Monte Carlo simulation for {hero_cards} vs {villain_cards} ")
+
     return np.array([
         equity,
         score_moyen_hero,
@@ -216,7 +218,7 @@ def monte_carlo_experience(hero_cards, villain_cards, num_simulations=10000): # 
     ])
 
 def equity_generation_for_canonical_hand_every_showdown(hero_card, hand_matrix, equity_matrix_slice_for_one_hand, full_equity_matrix):
-    
+    # useless function with multi processing available
     # VÉRIFICATION 1 : C'est bien une matrice numpy
     if not isinstance(equity_matrix_slice_for_one_hand, np.ndarray):
         raise TypeError(f"equity_matrix_slice_for_one_hand doit être np.ndarray, pas {type(equity_matrix_slice_for_one_hand)}")
@@ -239,6 +241,15 @@ def equity_generation_for_canonical_hand_every_showdown(hero_card, hand_matrix, 
             equity_matrix_slice_for_one_hand[i*13+j] = monte_carlo_experience(hero_card, villain_card)  
 
             np.save("data/equity_matrix.npy", full_equity_matrix)   
+
+def worker_for_one_row(hero_card, villain_row, row_index):
+        results =  []
+
+        for col_index, villain_card in enumerate(villain_row):
+            result = monte_carlo_experience(hero_card, villain_card)
+            results.append(result)
+
+        return results, row_index
 
 def equity_generation_for_canonical_hand_every_showdown_with_multi_processing(hero_card, hand_matrix, equity_matrix_slice_for_one_hand, full_equity_matrix):
     
@@ -254,15 +265,6 @@ def equity_generation_for_canonical_hand_every_showdown_with_multi_processing(he
         raise TypeError(f"hand_matrix doit être np.ndarray, pas {type(hand_matrix)}")   
     if hand_matrix.shape != (13, 13):
         raise ValueError(f"hand_matrix doit être (13, 13), pas {hand_matrix.shape}")
-
-    def worker_for_one_row(hero_card, villain_row, row_index):
-        results =  []
-
-        for col_index, villain_card in enumerate(villain_row):
-            result = monte_carlo_experience(hero_card, villain_card)
-            results.append(result)
-
-        return results, row_index
     
     max_workers = 13
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
@@ -273,16 +275,12 @@ def equity_generation_for_canonical_hand_every_showdown_with_multi_processing(he
             future = executor.submit(worker_for_one_row, hero_card, villain_row, row_index)
             futures.append(future)
 
-    for i in range(13):
-        for j in range(13):
-            if equity_matrix_slice_for_one_hand[i*13+j][0] != 0:
-                print(f"Equity already computed for {hero_card} vs {hand_matrix[i][j]}, skipping...")
-                continue  # skip already computed hands
-            villain_card = hand_matrix[i][j]
-            equity_matrix_slice_for_one_hand[i*13+j] = monte_carlo_experience(hero_card, villain_card)  
+        for future in as_completed(futures):
+            results, row_index = future.result()
+            for col_index, result in enumerate(results):
+                equity_matrix_slice_for_one_hand[row_index*13 + col_index] = result
 
-            np.save("data/equity_matrix.npy", full_equity_matrix)   
-
+        np.save("data/equity_matrix.npy", full_equity_matrix)
 
     
 def equity_generation_for_every_hand (hand_matrix, equity_matrix):
@@ -298,7 +296,7 @@ def equity_generation_for_every_hand (hand_matrix, equity_matrix):
 
             hero_card = hand_matrix[i][j]
             print(f"Starting equity generation for {hero_card}...")
-            equity_generation_for_canonical_hand_every_showdown(hero_card, hand_matrix, equity_matrix[i][j], equity_matrix)
+            equity_generation_for_canonical_hand_every_showdown_with_multi_processing(hero_card, hand_matrix, equity_matrix[i][j], equity_matrix)
             print(f"Completed equity generation for {hero_card}.")
 
 
