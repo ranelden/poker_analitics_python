@@ -115,7 +115,7 @@ def equity_generation_for_canonical_hand_every_showdown(hero_card, hand_matrix, 
             villain_card = hand_matrix[i][j]
             equity_matrix_slice_for_one_hand[i*13+j] = monte_carlo_experience(hero_card, villain_card)  
 
-            np.save("data/equity_matrix.npy", full_equity_matrix)   
+            np.save("../data/equity_matrix.npy", full_equity_matrix)   
 
 def worker_for_one_row(hero_card, villain_row, row_index):
         results =  []
@@ -155,7 +155,7 @@ def equity_generation_for_canonical_hand_every_showdown_with_multi_processing(he
             for col_index, result in enumerate(results):
                 equity_matrix_slice_for_one_hand[row_index*13 + col_index] = result
 
-        np.save("data/equity_matrix.npy", full_equity_matrix)
+        np.save("../data/equity_matrix.npy", full_equity_matrix)
     
 def equity_generation_for_every_hand (hand_matrix, equity_matrix):
     for i in range(13):
