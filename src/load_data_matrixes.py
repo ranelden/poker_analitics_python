@@ -1,0 +1,49 @@
+import numpy as np
+
+# Load or initialize hand matrix
+def load_hand_matrix():
+    try :
+        hand_matrix = np.load("../data/hand_matrix.npy", allow_pickle=True)
+        print("Hand matrix loaded from file.")
+    except Exception as e :
+        print(e)
+        hand_matrix = None
+
+    if hand_matrix is None:
+
+        carte = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"]
+
+        hand_matrix = np.empty((13, 13), dtype=object)
+
+        for i in range(13):
+            hand_matrix[i][i] = f"{carte[i]}{carte[i]}"
+
+        for i in range(13):
+            for j in range(i + 1, 13):
+                hand_matrix[i][j] = f"{carte[i]}{carte[j]}s"
+                hand_matrix[j][i] = f"{carte[i]}{carte[j]}o"
+
+        np.save("../data/hand_matrix.npy", hand_matrix)
+
+    return hand_matrix
+
+# Load or initialize equity matrix
+def load_equity_matrix():   
+    try :
+        equity_matrix = np.load("../data/equity_matrix.npy", allow_pickle=True)
+        print("equity_matrix loaded from file.")
+    except Exception as e :
+        print(e)
+        equity_matrix = None
+
+    if equity_matrix is None:
+
+        equity_matrix = np.empty((13, 13), dtype=object)
+
+        for i in range(13):
+            for j in range(13):
+                equity_matrix[i][j] = np.empty((169, 33), dtype=float)
+        np.save("../data/equity_matrix.npy", equity_matrix)
+
+    return equity_matrix
+
