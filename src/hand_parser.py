@@ -11,6 +11,8 @@ def parse_canonical_hand(canonical_hand, taken_cards):
             r1, r2, t = canonical_hand
 
             if t == 's':
+
+                
                 c = random.choice(colors)
                 hand = [r1 + c, r2 + c]
 
