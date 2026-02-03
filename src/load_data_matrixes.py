@@ -1,9 +1,17 @@
 import numpy as np
+from pathlib import Path
+
+base_dir = Path(__file__).resolve().parent.parent
+data_dir = base_dir / "data"
+data_dir.mkdir(exist_ok=True)
+    
 
 # Load or initialize hand matrix
 def load_hand_matrix():
+    file_path = data_dir / "hand_matrix.npy"
+
     try :
-        hand_matrix = np.load("../data/hand_matrix.npy", allow_pickle=True)
+        hand_matrix = np.load(file_path, allow_pickle=True)
         print("Hand matrix loaded from file.")
     except Exception as e :
         print(e)
@@ -23,14 +31,16 @@ def load_hand_matrix():
                 hand_matrix[i][j] = f"{carte[i]}{carte[j]}s"
                 hand_matrix[j][i] = f"{carte[i]}{carte[j]}o"
 
-        np.save("../data/hand_matrix.npy", hand_matrix)
+        np.save(file_path, hand_matrix)
 
     return hand_matrix
 
 # Load or initialize equity matrix
-def load_equity_matrix():   
+def load_equity_matrix():  
+    file_path = data_dir / "equity_matrix.npy"
+
     try :
-        equity_matrix = np.load("../data/equity_matrix.npy", allow_pickle=True)
+        equity_matrix = np.load(file_path, allow_pickle=True)
         print("equity_matrix loaded from file.")
     except Exception as e :
         print(e)
@@ -43,7 +53,7 @@ def load_equity_matrix():
         for i in range(13):
             for j in range(13):
                 equity_matrix[i][j] = np.empty((169, 33), dtype=float)
-        np.save("../data/equity_matrix.npy", equity_matrix)
+        np.save(file_path, equity_matrix)
 
     return equity_matrix
 
