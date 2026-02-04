@@ -68,10 +68,10 @@ def plot_poker_surface_3d_for_hero_hand(equity_matrix_slice, base_dir, hand_name
 
     ax1.set_xlim(0, 12)
     ax1.set_ylim(0, 12)
-    ax1.set_zlim(0, 1) 
+    ax1.set_zlim(1, 0) 
 
-    ax1.set_xlabel('Colonne', fontsize=10, labelpad=10)
-    ax1.set_ylabel('Ligne', fontsize=10, labelpad=10)
+    ax1.set_xlabel('offsuited', fontsize=10, labelpad=10)
+    ax1.set_ylabel('suited', fontsize=10, labelpad=10)
     ax1.set_zlabel('Valeur', fontsize=10, labelpad=10)
 
     # Titre
